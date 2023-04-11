@@ -188,7 +188,7 @@ sub deCONZ_Undef($$)
 
     if($hash->{resource} eq "gateway") {
         if($hash->{STATE} eq "connected"){
-            Log 1, "[deCONZ] $hash->{NAME}: Disconnecting websocket...";
+            Log 1, "[deCONZ]: $hash->{NAME} - Disconnecting websocket...";
             $client->disconnect;
             deCONZ_closeWebsocket($hash);
         }
@@ -223,8 +223,8 @@ sub deCONZ_Get($@)
     my $path;
     my @requestParams = ($hash, undef, undef, 0, $path);
     
-    #Log3 $hash->{NAME}, 3, "[deCONZ] GET Resource: " . Dumper $hash;
-    #Log3 $hash->{NAME}, 3, "[deCONZ] GET Resource: " . Dumper $modules{deCONZ}{defptr};
+    #Log3 $hash->{NAME}, 3, "[deCONZ]: GET Resource - " . Dumper $hash;
+    #Log3 $hash->{NAME}, 3, "[deCONZ]: GET Resource - " . Dumper $modules{deCONZ}{defptr};
 
     return "\"get $name\" needs to have at least one command" unless(defined($cmd));
     
@@ -331,12 +331,12 @@ sub deCONZ_Get($@)
     if($hash->{resource} eq "gateway" && defined($type)) {
         my $ret = "";
         $ret = deCONZ_PerformHttpRequest(@requestParams);
-        #Log3 $hash->{NAME}, 3, "[deCONZ] GET ACTION: " . Dumper $ret;
+        #Log3 $hash->{NAME}, 3, "[deCONZ]: GET ACTION - " . Dumper $ret;
         #return deCONZ_PerformHttpRequest(@requestParams);
         my $res;
         
         foreach my $key ( sort {$a<=>$b} keys %{$ret} ) {
-            #Log3 $hash->{NAME}, 3, "[deCONZ] GET ACTION: $key";
+            #Log3 $hash->{NAME}, 3, "[deCONZ]: GET ACTION - $key";
             my $ref = $type . $key;
             my $fhem_name = $modules{deCONZ}{defptr}{$ref}->{NAME} if( defined($modules{deCONZ}{defptr}{$ref}) );
             
@@ -346,7 +346,7 @@ sub deCONZ_Get($@)
         
         $res = sprintf( "%5s  %-32s %-26s %-40s\n", "ID", "NAME", "TYPE", "FHEM" ) .$res if( $res );
         
-        Log3 $hash->{NAME}, 3, "[deCONZ] GET Resource: " . Dumper $res;
+        Log3 $hash->{NAME}, 3, "[deCONZ]: GET Resource - " . Dumper $res;
         return $res;
     }
     else {
@@ -644,11 +644,11 @@ sub deCONZ_Set($$@)
         $path = $hash->{resource} . "/" . $hash->{id} . "/config";
         
         foreach my $stateReading ( sort keys %{$hash->{READINGS}} ) {
-            #Log3 $hash->{NAME}, 3, "[deCONZ] AVAILABLE READING: $stateReading";
+            #Log3 $hash->{NAME}, 3, "[deCONZ]: AVAILABLE READING - $stateReading";
             
             if(exists($configItems{$stateReading})) {
-                #Log3 $hash->{NAME}, 3, "[deCONZ] Item is configurable: $stateReading";
-                #Log3 $hash->{NAME}, 3, "[deCONZ] Item is configurable: $configItems{$stateReading}";
+                #Log3 $hash->{NAME}, 3, "[deCONZ]: Item is configurable - $stateReading";
+                #Log3 $hash->{NAME}, 3, "[deCONZ]: Item is configurable - $configItems{$stateReading}";
                 $list .= $stateReading . $configItems{$stateReading};
             }
         }
@@ -699,7 +699,7 @@ sub deCONZ_Set($$@)
             }
         }
         elsif($cmd eq "devicemode") {
-            if(@args > 0 && $args[0] =~ m/^(singlerocker|singlepushbutton|dualrocker|dualpushbutton|undirected|leftright|compatibility|zigbee)$/) {
+            if(@args > 0 && $args[0] =~ m/^(singlerocker|singlepushbutton|dualrocker|dualpushbutton|undirected|leftright|compatibility|zigbee|action|scene)$/) {
                 $obj = { $cmd => $args[0] };
             }
             else {
@@ -776,7 +776,7 @@ sub deCONZ_Set($$@)
             }
         }
         elsif($cmd eq "clickmode") {
-            if(@args > 0 && $args[0] =~ m/^(highspeed|multiclick|coupled|decoupled)$/) {
+            if(@args > 0 && $args[0] =~ m/^(highspeed|multiclick|coupled|decoupled|rocker|momentary)$/) {
                 $obj = { $cmd => $args[0] };
             }
             else {
@@ -1163,7 +1163,7 @@ sub deCONZ_Shutdown($)
     
     if($hash->{resource} eq "gateway") {
         if($hash->{STATE} eq "connected"){
-            Log 1, "[deCONZ] $hash->{NAME}: Disconnecting websocket...";
+            Log 1, "[deCONZ]: $hash->{NAME} - Disconnecting websocket...";
             $client->disconnect;
             deCONZ_closeWebsocket($hash);
         }
@@ -1403,11 +1403,21 @@ sub deCONZ_ParseHttpResponse($;$$)
 
     elsif($data ne "")
     {
-        Log 1, "[deCONZ]: Url " . $param->{url} . " returned data";
+        Log 1, "[deCONZ]: " . $param->{code} . " - Url " . $param->{url} . " returned data ";
         Log3 $name, 5, "[deCONZ]: Resource type: " . $hash->{resource};
         Log3 $name, 5, "[deCONZ]: Response data: " . $data;
         
         $hash->{fullResponse} = $data;
+        
+        if($param->{code} == 404) {       # Rarely, deCONZ doesn't return any expected content. We want to retry in that case
+            if($data =~ m/(This is not the page you are looking for)/) {
+    	        Log 1, "[deCONZ]: This is not the page you are looking for";
+    	    }
+    	    
+            my @requestParams = ($hash, undef, undef, 0, $param->{path});
+            RemoveInternalTimer($hash);
+            InternalTimer(gettimeofday() + 60, "deCONZ_PerformHttpRequest", \@requestParams, 0);    # Resend request on timeouts
+        }
         
         my $json = eval { JSON->new->utf8(0)->decode($data) };
         my $resource = $hash->{resource};
@@ -1725,7 +1735,7 @@ sub deCONZ_pair
     }
 
     my $method = "POST";
-    my @requestParams = ($hash, $method, $obj, 1);
+    my @requestParams = ($hash, $method, $obj, 1, "api");
     
     my $ret = deCONZ_PerformHttpRequest(@requestParams);
     
@@ -1786,21 +1796,22 @@ sub deCONZ_PerformHttpRequest
         $baseUrl = "http://$hash->{host}:$hash->{httpport}";
         $apikey = AttrVal($hash->{NAME}, "apikey", "");
     }
-    
-    if(defined($method) && $method eq "POST") {     # Request to obtain API key
-        $url = $baseUrl;
-    }
-    else {
-        if($path =~ m/^\/api/) {    # Reuse the path of a previously failed request
-            $url = $baseUrl . $path;
-        }        
-        elsif($apikey eq "") {      # Don't send HTTP requests without an API key
-            Log 1, "[deCONZ]: No API key available";
-            return;
+
+    if($apikey eq "") {      # Don't send HTTP requests without an API key...
+        if(defined($method) && $method eq "POST" && $path =~ m/^api$/) {     # ...except for when requesting to obtain an API key
+            $url = $baseUrl . "/" . $path;
+            Log 1, "[deCONZ]: Requesting API key";
         }
         else {
-            $url = $baseUrl . "/api/" . $apikey . "/" . $path;
+            Log 1, "[deCONZ]: No API key available, not sending any request";
+            return;
         }
+    }
+    elsif($path =~ m/$apikey/) {        # When a request is re-send, do not add API key again
+        $url = $baseUrl . $path;
+    }
+    else {
+        $url = $baseUrl . "/api/" . $apikey . "/" . $path;
     }
     
     if( defined( $obj ) ) {
