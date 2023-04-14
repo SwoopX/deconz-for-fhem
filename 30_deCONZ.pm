@@ -1411,12 +1411,14 @@ sub deCONZ_ParseHttpResponse($;$$)
         
         if($param->{code} == 404) {       # Rarely, deCONZ doesn't return any expected content. We want to retry in that case
             if($data =~ m/(This is not the page you are looking for)/) {
-    	        Log 1, "[deCONZ]: This is not the page you are looking for";
-    	    }
-    	    
-            my @requestParams = ($hash, undef, undef, 0, $param->{path});
-            RemoveInternalTimer($hash);
-            InternalTimer(gettimeofday() + 60, "deCONZ_PerformHttpRequest", \@requestParams, 0);    # Resend request on timeouts
+                Log 1, "[deCONZ]: This is not the page you are looking for";
+                
+                my @requestParams = ($hash, undef, undef, 0, $param->{path});
+                RemoveInternalTimer($hash);
+                InternalTimer(gettimeofday() + 60, "deCONZ_PerformHttpRequest", \@requestParams, 0);    # Resend request on timeouts
+        }
+        
+            
         }
         
         my $json = eval { JSON->new->utf8(0)->decode($data) };
