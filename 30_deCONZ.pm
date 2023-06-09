@@ -1711,6 +1711,36 @@ sub deCONZ_parseConfig
     $readings{windowopendetectionenabled} = $config->{windowopendetectionenabled}?"true":"false" if( defined($config->{windowopendetectionenabled}) );
     $readings{loadroommean} = $config->{loadroommean} if( defined($config->{loadroommean}) );
     $readings{meanloadroom} = $config->{meanloadroom} if( defined($config->{meanloadroom}) );
+    
+    if( defined ($config->{schedule}) && ref($config->{schedule}) eq "HASH" ) {
+        my $schedule = "";
+        my $transitions;
+        
+        foreach my $days (keys %{$config->{schedule}}) {
+            $transitions = ${$config->{schedule}}{$days};
+            $schedule = $schedule . $days . " - ";
+            
+            if( ref($transitions) eq "ARRAY" ) {
+                foreach my $arrkey2 (@$transitions) {
+                    if( ref($arrkey2) eq "HASH" ) {
+                        if (defined(${$arrkey2}{'heatsetpoint'})) {
+                            $schedule = $schedule . ${$arrkey2}{'heatsetpoint'};
+                        }
+                        
+                        if (defined(${$arrkey2}{'heatsetpoint'})) {
+                            $schedule = $schedule . ${$arrkey2}{'localtime'} . "|";
+                        }
+                    }
+                }
+          
+                if (substr($schedule, -1) eq "|") {
+                    $schedule = substr($schedule, 0, -1);
+                }
+            }
+        }
+        
+        $readings{schedule} = $schedule . "\n";
+    }
 
     return %readings;
 }
