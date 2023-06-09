@@ -1623,7 +1623,7 @@ sub deCONZ_parseState
     $readings{sat} = $state->{sat} if( defined($state->{sat}) );
     $readings{transitiontime} = $state->{transitiontime} if( defined($state->{transitiontime}) );
     $readings{xy} = $state->{xy}[0] . "," . $state->{xy}[1] if( defined($state->{xy}) );
-    $readings{open} = $state->{open} if( defined($state->{open}) );
+    $readings{open} = $state->{open}?"true":"false" if( defined($state->{open}) );
     $readings{lift} = $state->{lift} if( defined($state->{lift}) );
     $readings{tilt} = $state->{tilt} if( defined($state->{tilt}) );
     $readings{colormode} = $state->{colormode} if( defined($state->{colormode}) );
