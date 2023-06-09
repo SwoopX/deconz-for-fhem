@@ -1679,7 +1679,7 @@ sub deCONZ_parseConfig
     $readings{delay} = $config->{delay} if( defined ($config->{delay}) );
     $readings{duration} = $config->{duration} if( defined ($config->{duration}) );
     $readings{group} = $config->{group} if( defined ($config->{group}) );
-    $readings{groups} = $config->{groups} if( defined ($config->{groups}) );
+    $readings{groups} = join(',', @{$config->{groups}}) if( defined($config->{groups}) && ref($config->{groups}) eq "ARRAY" );
     $readings{schedule} = $config->{schedule} if( defined ($config->{schedule}) );
     $readings{schedule_on} = $config->{schedule_on}?"true":"false" if( defined ($config->{schedule_on}) );
     $readings{coolsetpoint} = $config->{coolsetpoint} if( defined ($config->{coolsetpoint}) );
