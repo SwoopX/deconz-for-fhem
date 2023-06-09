@@ -370,6 +370,10 @@ sub deCONZ_Set($$@)
                     $list .= $stateReading . ":colorpicker,CT," . $hash->{ctmin} . ",1," . $hash->{ctmax} . " ";
                     $list .= "ctUp:noArg ctDown:noArg ";
                 }
+                elsif($hash->{resource} eq "groups") {
+                    $list .= $stateReading . ":colorpicker,CT,154,1,350 ";
+                    $list .= "ctUp:noArg ctDown:noArg ";
+                }
             }
             elsif($stateReading eq "bri") {
                 $list .= $stateReading . $settableLightStates{$stateReading};
@@ -487,6 +491,9 @@ sub deCONZ_Set($$@)
                 }
                 elsif($cmd eq "ct") {
                     if(@args > 0 && $args[0] >= $hash->{ctmin} && $args[0] <= $hash->{ctmax}) {
+                        $obj = { $cmd => int($args[0]) };
+                    }
+                    elsif(@args > 0 && $hash->{resource} eq "groups" && $args[0] >= 154 && $args[0] <= 350) {
                         $obj = { $cmd => int($args[0]) };
                     }
                     else {
