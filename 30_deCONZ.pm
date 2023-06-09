@@ -436,6 +436,12 @@ sub deCONZ_Set($$@)
                 elsif($cmd eq "stop") {
                     $obj = { $cmd => JSON::true };
                 }
+                elsif($cmd eq "up") {
+                    $obj = { "open" => JSON::true };
+                }
+                elsif($cmd eq "down") {
+                    $obj = { "open" => JSON::false };
+                }
                 elsif($cmd eq "lift") {
                     if(@args > 0) {
                         $obj = { $cmd => int($args[0]) };
