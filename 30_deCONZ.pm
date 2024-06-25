@@ -1734,12 +1734,12 @@ sub deCONZ_parseConfig
                 }
           
                 if (substr($schedule, -1) eq "|") {
-                    $schedule = substr($schedule, 0, -1);
+                    $schedule = substr($schedule, 0, -1) . "\n";
                 }
             }
         }
         
-        $readings{schedule} = $schedule . "\n";
+        $readings{schedule} = $schedule;
     }
 
     return %readings;
