@@ -1636,6 +1636,7 @@ sub deCONZ_parseState
     $readings{scene} = $state->{scene} if( defined($state->{scene}) );
     $readings{all_on} = $state->{all_on} if( defined($state->{all_on}) );
     $readings{any_on} = $state->{any_on} if( defined($state->{any_on}) );
+    $readings{state} = $state->{any_on}?"on":"off" if( defined($state->{any_on}) );
     $readings{presenceevent} = $state->{presenceevent} if( defined ($state->{presenceevent}) );
     $readings{charging} = $state->{charging} if( defined ($state->{charging}) );
 
