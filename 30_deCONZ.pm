@@ -36,45 +36,45 @@ my %settableLightStates = ( "alert"             => ":none,select,lselect ",
                             "tilt"              => ":slider,0,1,100 "
                           );
 
-my %configItems = ( "controlsequence"           => ":true,false ",
-                    "coolsetpoint"              => " ",
-                    "delay"                     => " ",
-                    "devicemode"                => ":singlerocker,singlepushbutton,dualrocker,dualpushbutton,undirected,leftright,compatibility,zigbee ",
-                    "clickmode"                 => ":highspeed,multiclick,coupled,decoupled ",
-                    "displayflipped"            => ":true,false ",
-                    "duration"                  => " ",
-                    "externalsensortemp"        => " ",
-                    "externalwindowopen"        => ":true,false ",
-                    "fanmode"                   => ":off,low,medium,high,on,auto,smart ",
-                    "heatsetpoint"              => " ",
-                    "hostflags"                 => " ",
-                    "interfacemode"             => ":1,2,3,4,5,6,7,8 ",
-                    "ledindication"             => ":true,false ",
-                    "locked"                    => ":true,false ",
-                    "mode"                      => ":off,auto,cool,heat,emergencyheating,precooling,fanonly,dry,sleep ",
-                    "mountingmode"              => ":true,false ",
-                    "offset"                    => ":slider,-25,1,25 ",
-                    "pulseconfiguration"        => " ",
-                    "preset"                    => " ",
-                    "resetpresence"             => ":true,false ",
-                    "schedule"                  => " ",
-                    "schedule_on"               => ":true,false ",
-                    "selftest"                  => ":true,false ",
-                    "sensitivity"               => " ",
-                    "setvalve"                  => " ",
-                    "swingmode"                 => ":fullyclosed,fullyopen,quarteropen,halfopen,threequartersopen ",
-                    "temperaturemeasurement"    => ":airsensor,floorsensor,floorprotection ",
-                    "tholddark"                 => " ",
-                    "tholdoffset"               => " ",
-                    "triggerdistance"           => ":far,medium,near ",
-                    "usertest"                  => ":true,false ",
-                    "windowscoveringtype"       => " ",
+my %configItems = ( "controlsequence"                => ":true,false ",
+                    "coolsetpoint"                   => " ",
+                    "delay"                          => " ",
+                    "devicemode"                     => ":singlerocker,singlepushbutton,dualrocker,dualpushbutton,undirected,leftright,compatibility,zigbee ",
+                    "clickmode"                      => ":highspeed,multiclick,coupled,decoupled ",
+                    "displayflipped"                 => ":true,false ",
+                    "duration"                       => " ",
+                    "externalsensortemp"             => " ",
+                    "externalwindowopen"             => ":true,false ",
+                    "fanmode"                        => ":off,low,medium,high,on,auto,smart ",
+                    "heatsetpoint"                   => ":slider,7,0.5,35,1 ",
+                    "hostflags"                      => " ",
+                    "interfacemode"                  => ":1,2,3,4,5,6,7,8 ",
+                    "ledindication"                  => ":true,false ",
+                    "locked"                         => ":true,false ",
+                    "mode"                           => ":off,auto,cool,heat,emergencyheating,precooling,fanonly,dry,sleep ",
+                    "mountingmode"                   => ":true,false ",
+                    "offset"                         => ":slider,-25,1,25 ",
+                    "pulseconfiguration"             => " ",
+                    "preset"                         => " ",
+                    "resetpresence"                  => ":true,false ",
+                    "schedule"                       => " ",
+                    "schedule_on"                    => ":true,false ",
+                    "selftest"                       => ":true,false ",
+                    "sensitivity"                    => " ",
+                    "setvalve"                       => " ",
+                    "swingmode"                      => ":fullyclosed,fullyopen,quarteropen,halfopen,threequartersopen ",
+                    "temperaturemeasurement"         => ":airsensor,floorsensor,floorprotection ",
+                    "tholddark"                      => " ",
+                    "tholdoffset"                    => " ",
+                    "triggerdistance"                => ":far,medium,near ",
+                    "usertest"                       => ":true,false ",
+                    "windowscoveringtype"            => " ",
                     "loadbalancing"                  => ":true,false ",
-                    "radiatorcovered"                  => ":true,false ",
-                    "windowopendetectionenabled"                  => ":true,false ",
-                    "meanloadroom"                  => " ",
+                    "radiatorcovered"                => ":true,false ",
+                    "windowopendetectionenabled"     => ":true,false ",
+                    "meanloadroom"                   => " ",
                     "adaptationrun"                  => ":none,calibrate,cancelled ",
-                    "adaptationsetting"                  => ":night,now "
+                    "adaptationsetting"              => ":night,now "
                   );
                   
 my %dim_values = ( 0    => "dim06%",
@@ -653,7 +653,7 @@ sub deCONZ_Set($$@)
         deCONZ_PerformHttpRequest(@requestParams);
     }
     elsif($hash->{resource} eq "sensors") {
-        my $list = "rename deletelightwithreset:false,true ";
+        my $list = "rename deletesensorwithreset:false,true ";
         $path = $hash->{resource} . "/" . $hash->{id} . "/config";
         
         foreach my $stateReading ( sort keys %{$hash->{READINGS}} ) {
@@ -675,7 +675,7 @@ sub deCONZ_Set($$@)
                 return "Unknown argument value for $cmd, choose one of $list";
             }
         }
-        elsif($cmd eq "deletelightwithreset") {
+        elsif($cmd eq "deletesensorwithreset") {
             if(@args > 0 && exists($bool{$args[0]})) {
                 my $value = $bool{$args[0]} ? JSON::true : JSON::false;
                 $obj = { "reset" => $value };
@@ -1372,7 +1372,7 @@ sub deCONZ_updateFromWebsocket($$)
             }
             
             if(defined($jsonData->{config}) && ref($jsonData->{config}) eq "HASH") {
-                %readings = deCONZ_parseConfig($jsonData->{config}, %readings);
+                %readings = deCONZ_parseConfig($devHashToUpdate, $jsonData->{config}, %readings);
             }
             
             if( scalar keys %readings ) {
@@ -1475,7 +1475,7 @@ sub deCONZ_ParseHttpResponse($;$$)
                 
                 if(defined($json->{config}))
                 {
-                    %readings = deCONZ_parseConfig($json->{config}, %readings);
+                    %readings = deCONZ_parseConfig($hash, $json->{config}, %readings);
                 }
                 
                 if( scalar keys %readings )
@@ -1665,7 +1665,7 @@ sub deCONZ_parseState
 
 sub deCONZ_parseConfig
 {
-    my ($config, %readings) = @_;
+    my ($hash, $config, %readings) = @_;
     
     $readings{batteryPercent} = $config->{battery} if( defined($config->{battery}) );
     $readings{tholddark} = $config->{tholddark} if( defined($config->{tholddark}) );
@@ -1741,6 +1741,12 @@ sub deCONZ_parseConfig
         }
         
         $readings{schedule} = $schedule;
+    }
+    
+    if(!defined($attr{$hash->{NAME}}{webCmd})) {
+        if($hash->{resource} eq "sensors" && defined($hash->{type}) && $hash->{type} =~ m/^ZHAThermostat/) {
+            $attr{$hash->{NAME}}{webCmd} = 'heatsetpoint';
+        }
     }
 
     return %readings;
