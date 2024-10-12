@@ -39,6 +39,7 @@ my %settableLightStates = ( "alert"             => ":none,select,lselect ",
 my %configItems = ( "controlsequence"                => ":true,false ",
                     "coolsetpoint"                   => " ",
                     "delay"                          => " ",
+                    "detectionrange"                 => " ",
                     "devicemode"                     => ":singlerocker,singlepushbutton,dualrocker,dualpushbutton,undirected,leftright,compatibility,zigbee ",
                     "clickmode"                      => ":highspeed,multiclick,coupled,decoupled ",
                     "displayflipped"                 => ":true,false ",
@@ -704,6 +705,14 @@ sub deCONZ_Set($$@)
             }
         }
         elsif($cmd eq "delay") {
+            if(@args > 0) {
+                $obj = { $cmd => int($args[0]) };
+            }
+            else {
+                return "Unknown argument value for $cmd, choose one of $list";
+            }
+        }
+        elsif($cmd eq "detectionrange") {
             if(@args > 0) {
                 $obj = { $cmd => int($args[0]) };
             }
@@ -1639,6 +1648,7 @@ sub deCONZ_parseState
     $readings{state} = $state->{any_on}?"on":"off" if( defined($state->{any_on}) );
     $readings{presenceevent} = $state->{presenceevent} if( defined ($state->{presenceevent}) );
     $readings{charging} = $state->{charging} if( defined ($state->{charging}) );
+    $readings{distance} = $state->{distance} if( defined ($state->{distance}) );
 
     $readings{adaptationstatus} = $state->{adaptationstatus} if( defined ($state->{adaptationstatus}) );
     $readings{loadestimateradiator} = $state->{loadestimateradiator} if( defined ($state->{loadestimateradiator}) );
@@ -1678,6 +1688,7 @@ sub deCONZ_parseConfig
     $readings{mode} = $config->{mode} if( defined ($config->{mode}) );
     $readings{offset} = $config->{offset} if( defined ($config->{offset}) );
     $readings{delay} = $config->{delay} if( defined ($config->{delay}) );
+    $readings{detectionrange} = $config->{detectionrange} if( defined ($config->{detectionrange}) );
     $readings{duration} = $config->{duration} if( defined ($config->{duration}) );
     $readings{group} = $config->{group} if( defined ($config->{group}) );
     $readings{groups} = join(',', @{$config->{groups}}) if( defined($config->{groups}) && ref($config->{groups}) eq "ARRAY" );
